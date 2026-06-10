@@ -1,0 +1,6 @@
+{
+  "name": "Serenity Forest",
+  "description": "The official website of Serenity Forest wellness and mindfulness platform. Reconnect with yourself through nature-inspired experiences.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

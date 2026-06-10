@@ -1,0 +1,218 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  --color-forest-950: #13240c;
+  --color-forest-900: #1B3012;
+  --color-forest-800: #2D4F1E;
+  --color-forest-700: #3E642E;
+  --color-forest-600: #4B773C;
+  --color-forest-500: #5C8C4E;
+  --color-sage-400: #9DBEBB;
+  --color-sage-300: #B4CECC;
+  --color-sage-200: #D0E0DE;
+  --color-sage-100: #EBF2F1;
+  --color-earth-900: #2D4F1E;
+  --color-earth-800: #3E642E;
+  --color-earth-700: #5C8C4E;
+  --color-earth-600: #9DBEBB;
+  --color-beige-200: #E3E6DC;
+  --color-beige-100: #EFF1EB;
+  --color-beige-50: #F8F9F3;
+  --color-sky-500: #9DBEBB;
+  --color-sky-100: #EBF2F1;
+  --color-peach-light: #f5cfc4;
+  --color-peach-accent: #E07A5F;
+}
+
+/* Custom Nature Animations */
+@keyframes leaf-float-1 {
+  0% {
+    transform: translateY(-20px) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.6;
+  }
+  85% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(100vh) translateX(120px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes leaf-float-2 {
+  0% {
+    transform: translateY(-20px) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(100vh) translateX(-100px) rotate(-240deg);
+    opacity: 0;
+  }
+}
+
+@keyframes wind-gently {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(2deg) scale(1.02);
+  }
+}
+
+@keyframes water-flow {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes cloud-move {
+  0% {
+    transform: translateX(-10% );
+  }
+  100% {
+    transform: translateX(110% );
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes breath-cycle {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(161, 212, 148, 0.4);
+  }
+  40% { /* Inhale: 4s */
+    transform: scale(1.6);
+    box-shadow: 0 0 50px rgba(161, 212, 148, 0.8);
+    background-color: rgba(45, 90, 39, 0.25);
+  }
+  60% { /* Hold: 2s */
+    transform: scale(1.6);
+    box-shadow: 0 0 60px rgba(66, 165, 245, 0.8);
+    background-color: rgba(66, 165, 245, 0.25);
+  }
+  100% { /* Exhale: 4s */
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(161, 212, 148, 0.4);
+  }
+}
+
+@keyframes alert-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 15px rgba(211, 47, 47, 0);
+  }
+}
+
+@keyframes wave-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-leaf-1 {
+  animation: leaf-float-1 25s infinite linear;
+}
+
+.animate-leaf-2 {
+  animation: leaf-float-2 32s infinite linear;
+}
+
+.animate-wind {
+  animation: wind-gently 8s ease-in-out infinite;
+}
+
+.animate-cloud-slow {
+  animation: cloud-move 120s infinite linear;
+}
+
+.animate-cloud-fast {
+  animation: cloud-move 70s infinite linear;
+}
+
+.animate-glow {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.animate-breath {
+  animation: breath-cycle 10s infinite ease-in-out;
+}
+
+.animate-alert {
+  animation: alert-pulse 2s infinite ease-in-out;
+}
+
+.glass-nature {
+  background: rgba(253, 254, 249, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.glass-nature-dark {
+  background: rgba(10, 32, 7, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(45, 90, 39, 0.3);
+}
+
+.glass-phone {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f3f4ed;
+}
+::-webkit-scrollbar-thumb {
+  background: #c2c9bb;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #72796e;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
