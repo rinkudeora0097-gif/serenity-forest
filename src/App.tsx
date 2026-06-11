@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { 
   Leaf, Flower2, HelpCircle, ArrowRight, Download, Laptop, Smartphone,
   Flame, Compass, Wind, Smile, BookOpen, Sparkles, RefreshCw, Moon, 
@@ -6,18 +6,20 @@ import {
   ArrowUpRight, Feather, Github, Star, ChevronRight
 } from 'lucide-react';
 
-import Forest3DCanvas from './components/Forest3DCanvas';
-import EmergencyRelax from './components/EmergencyRelax';
-import MoodWellnessSystem from './components/MoodWellnessSystem';
-import InteractivePhoneMockup from './components/InteractivePhoneMockup';
-import AchievementJourney from './components/AchievementJourney';
-import ContactFAQ from './components/ContactFAQ';
-import ResetMode from './components/ResetMode';
-import brandLogoImage from './assets/images/serenity_forest_elegant_logo_1781092348423.png';
 import { useAuth } from './contexts/AuthContext';
-import AuthGateway from './components/AuthGateway';
-import UserProfilePage from './components/UserProfilePage';
-import PrivacyPolicy from './components/PrivacyPolicy';
+import brandLogoImage from './assets/images/serenity_forest_elegant_logo_1781092348423.png';
+
+// Lazy loading heavy sub-components for instant mobile startup and reduced initial JS chunk
+const Forest3DCanvas = lazy(() => import('./components/Forest3DCanvas'));
+const EmergencyRelax = lazy(() => import('./components/EmergencyRelax'));
+const MoodWellnessSystem = lazy(() => import('./components/MoodWellnessSystem'));
+const InteractivePhoneMockup = lazy(() => import('./components/InteractivePhoneMockup'));
+const AchievementJourney = lazy(() => import('./components/AchievementJourney'));
+const ContactFAQ = lazy(() => import('./components/ContactFAQ'));
+const ResetMode = lazy(() => import('./components/ResetMode'));
+const AuthGateway = lazy(() => import('./components/AuthGateway'));
+const UserProfilePage = lazy(() => import('./components/UserProfilePage'));
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -302,8 +304,17 @@ export default function App() {
       {/* --- HERO SECTION --- */}
       <section id="hero-section" className="relative py-16 sm:py-24 lg:py-32 px-6 overflow-hidden">
         
-        {/* Animated magical 3D forest background */}
-        <Forest3DCanvas isDarkMode={isDarkMode} />
+        {/* Animated magical 3D forest background with dynamic Suspense skeleton */}
+        <Suspense fallback={
+          <div className="absolute inset-0 w-full h-full z-0 flex items-center justify-center bg-gradient-to-b from-[#ebf2f1] to-[#f5f8f6] dark:from-[#030a08] dark:to-stone-900 transition-all duration-700">
+            <div className="flex flex-col items-center gap-3">
+              <Leaf className="w-8 h-8 text-forest-600 animate-pulse text-[#2d5a27] dark:text-[#a1d494]" />
+              <span className="text-[10px] font-mono tracking-widest uppercase text-forest-700/60 dark:text-stone-400">Loading Sanctuary 3D...</span>
+            </div>
+          </div>
+        }>
+          <Forest3DCanvas isDarkMode={isDarkMode} />
+        </Suspense>
 
         <div className="relative z-10 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
@@ -602,19 +613,55 @@ export default function App() {
 
 
       {/* --- RECONSTRUCTED INTERACTIVE EMERGENCY RELIEF SECTION --- */}
-      <EmergencyRelax />
+      <Suspense fallback={
+        <div className="py-12 flex justify-center items-center">
+          <div className="animate-pulse flex items-center gap-2 text-xs font-mono text-stone-400">
+            <RefreshCw className="w-4 h-4 animate-spin text-orange-400" />
+            <span>Loading Emergency Relax Module...</span>
+          </div>
+        </div>
+      }>
+        <EmergencyRelax />
+      </Suspense>
 
 
       {/* --- THE MOOD-BASED RECOMMENDATIONS SYSTEM --- */}
-      <MoodWellnessSystem />
+      <Suspense fallback={
+        <div className="py-16 text-center">
+          <div className="animate-pulse inline-flex items-center gap-2 text-xs font-mono text-stone-400">
+            <Compass className="w-4 h-4 animate-spin text-emerald-600" />
+            <span>Loading Recommendations System...</span>
+          </div>
+        </div>
+      }>
+        <MoodWellnessSystem />
+      </Suspense>
 
 
       {/* --- NATURE ACHIEVEMENT STEPS PROGRESS ROADMAP --- */}
-      <AchievementJourney />
+      <Suspense fallback={
+        <div className="py-16 text-center">
+          <div className="animate-pulse inline-flex items-center gap-2 text-xs font-mono text-stone-400">
+            <Award className="w-4 h-4 animate-spin text-[#fabf24]" />
+            <span>Loading Achievement Roadmap...</span>
+          </div>
+        </div>
+      }>
+        <AchievementJourney />
+      </Suspense>
 
 
       {/* --- REAL-TIME PHONE PLATFORM PREVIEW SIMULATOR --- */}
-      <InteractivePhoneMockup />
+      <Suspense fallback={
+        <div className="py-16 text-center">
+          <div className="animate-pulse inline-flex items-center gap-2 text-xs font-mono text-stone-400">
+            <Smartphone className="w-4 h-4 animate-bounce text-blue-500" />
+            <span>Loading Simulator Sandbox...</span>
+          </div>
+        </div>
+      }>
+        <InteractivePhoneMockup />
+      </Suspense>
 
 
       {/* --- 8 CORE WELLNESS BENEFITS SECTION --- */}
@@ -845,16 +892,27 @@ export default function App() {
       </footer>
 
       {/* --- FLOATING FULL SCREEN RESET MODE OVERLAY --- */}
-      <ResetMode isOpen={isResetModeOpen} onClose={() => setIsResetModeOpen(false)} />
+      <Suspense fallback={null}>
+        <ResetMode isOpen={isResetModeOpen} onClose={() => setIsResetModeOpen(false)} />
+      </Suspense>
 
       {/* --- PRIVACY POLICY COMPREHENSIVE OVERLAY --- */}
-      <PrivacyPolicy isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+      <Suspense fallback={null}>
+        <PrivacyPolicy isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+      </Suspense>
 
       {/* --- USER ACCOUNT PROFILE MODAL OVERLAY --- */}
       {isProfileOpen && (
         <div className="fixed inset-0 bg-stone-950/75 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto">
           <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto relative rounded-[2rem] bg-stone-50 dark:bg-stone-900 border border-stone-200/50 dark:border-white/5 shadow-2xl">
-            <UserProfilePage onClose={() => setIsProfileOpen(false)} />
+            <Suspense fallback={
+              <div className="p-12 text-center text-xs font-mono text-stone-400">
+                <User className="w-6 h-6 mx-auto animate-pulse text-emerald-600 mb-2" />
+                <span>Opening Profile Sanctuary...</span>
+              </div>
+            }>
+              <UserProfilePage onClose={() => setIsProfileOpen(false)} />
+            </Suspense>
           </div>
         </div>
       )}
@@ -862,10 +920,19 @@ export default function App() {
       {/* --- USER AUTH GATEWAY MODAL OVERLAY --- */}
       {isAuthOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <AuthGateway 
-            initialTab={authTab === 'forgot' ? 'forgot' : authTab} 
-            onClose={() => setIsAuthOpen(false)} 
-          />
+          <Suspense fallback={
+            <div className="fixed inset-0 bg-stone-950/75 backdrop-blur-md flex items-center justify-center z-50">
+              <div className="animate-pulse text-center space-y-2 text-stone-400 font-mono text-xs">
+                <ShieldCheck className="w-8 h-8 text-emerald-500 animate-spin mx-auto" />
+                <span>Securing Authentication Portal...</span>
+              </div>
+            </div>
+          }>
+            <AuthGateway 
+              initialTab={authTab === 'forgot' ? 'forgot' : authTab} 
+              onClose={() => setIsAuthOpen(false)} 
+            />
+          </Suspense>
         </div>
       )}
 

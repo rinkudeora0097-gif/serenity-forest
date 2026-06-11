@@ -18,6 +18,32 @@
     
     <!-- Standard Favicons -->
     <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- Performance preloads -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Advanced Performance Style Hints for Mobile rendering -->
+    <style>
+      /* Smooth behavior & GPU-layering for scroll containers */
+      html {
+        scroll-behavior: smooth;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      /* Avoid layout shifting & minimize paint work for sections far below fold */
+      #mood-section,
+      #benefits-section,
+      #founder-section,
+      #download-section,
+      #faq-section-anchor,
+      #contact-section {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 500px;
+      }
+    </style>
   </head>
   <body class="bg-beige-50 dark:bg-stone-950 text-forest-800 dark:text-stone-300">
     <div id="root"></div>

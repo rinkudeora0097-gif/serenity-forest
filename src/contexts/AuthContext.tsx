@@ -23,7 +23,8 @@ import {
   orderBy, 
   onSnapshot,
   serverTimestamp,
-  getDocFromServer
+  getDocFromServer,
+  limit
 } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 
@@ -198,7 +199,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           activeUnsubscribers.push(unsubscribeProfile);
 
-          const moodQuery = query(collection(db, `users/${currentUser.uid}/mood_logs`), orderBy('timestamp', 'desc'));
+          // Setup real-time listeners for sub-collections strictly bounded under matching owner
+          // Limited to most recent 40 documents to minimize initial document query sizes & speed up rendering on mobile
+          const moodQuery = query(collection(db, `users/${currentUser.uid}/mood_logs`), orderBy('timestamp', 'desc'), limit(40));
           const unsubscribeMoods = onSnapshot(moodQuery, (snap) => {
             const list: DbMoodLog[] = [];
             snap.forEach((d) => {
@@ -210,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           activeUnsubscribers.push(unsubscribeMoods);
 
-          const journalQuery = query(collection(db, `users/${currentUser.uid}/journal_entries`), orderBy('timestamp', 'desc'));
+          const journalQuery = query(collection(db, `users/${currentUser.uid}/journal_entries`), orderBy('timestamp', 'desc'), limit(40));
           const unsubscribeJournals = onSnapshot(journalQuery, (snap) => {
             const list: DbJournalEntry[] = [];
             snap.forEach((d) => {
@@ -222,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           activeUnsubscribers.push(unsubscribeJournals);
 
-          const sessionsQuery = query(collection(db, `users/${currentUser.uid}/focus_sessions`), orderBy('timestamp', 'desc'));
+          const sessionsQuery = query(collection(db, `users/${currentUser.uid}/focus_sessions`), orderBy('timestamp', 'desc'), limit(40));
           const unsubscribeSessions = onSnapshot(sessionsQuery, (snap) => {
             const list: DbFocusSession[] = [];
             snap.forEach((d) => {
@@ -234,7 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           activeUnsubscribers.push(unsubscribeSessions);
 
-          const meditationsQuery = query(collection(db, `users/${currentUser.uid}/meditations`), orderBy('timestamp', 'desc'));
+          const meditationsQuery = query(collection(db, `users/${currentUser.uid}/meditations`), orderBy('timestamp', 'desc'), limit(40));
           const unsubscribeMeditations = onSnapshot(meditationsQuery, (snap) => {
             const list: DbMeditation[] = [];
             snap.forEach((d) => {

@@ -11,7 +11,14 @@ export default function Forest3DCanvas({ isDarkMode }: Forest3DCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // State to manage quality settings (for low-end devices)
-  const [highQuality, setHighQuality] = useState(true);
+  const [highQuality, setHighQuality] = useState(() => {
+    if (typeof window !== 'undefined' && window.navigator) {
+      const ua = window.navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      return !isMobile;
+    }
+    return true;
+  });
   const [isRotating, setIsRotating] = useState(true);
 
   // Audio state & refs for high-fidelity procedurally synthesized waterfall sound
@@ -712,9 +719,23 @@ export default function Forest3DCanvas({ isDarkMode }: Forest3DCanvasProps) {
     // --- 11. RENDERING ANIMATION LOOP ---
     const startTime = performance.now();
     let animationFrameId: number;
+    let lastTime = performance.now();
+    const fpsInterval = 1000 / 60; // Cap at 60 FPS to prevent battery drain and thermal throttling on high-Hz mobile screens
 
     const tick = () => {
-      const elapsedTime = (performance.now() - startTime) / 1000;
+      animationFrameId = requestAnimationFrame(tick);
+
+      const now = performance.now();
+      const elapsedFrame = now - lastTime;
+
+      // Frame throttle check
+      if (elapsedFrame < fpsInterval) {
+        return;
+      }
+      // Adjust lastTime to account for interval remainder
+      lastTime = now - (elapsedFrame % fpsInterval);
+
+      const elapsedTime = (now - startTime) / 1000;
 
       // Slow dynamic camera rotation if enabled
       if (isRotating) {
@@ -838,7 +859,6 @@ export default function Forest3DCanvas({ isDarkMode }: Forest3DCanvasProps) {
       }
 
       renderer.render(scene, camera);
-      animationFrameId = requestAnimationFrame(tick);
     };
 
     tick();
