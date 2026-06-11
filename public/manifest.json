@@ -1,0 +1,53 @@
+{
+  "name": "Serenity Forest",
+  "short_name": "Serenity Forest",
+  "description": "Interactive mental wellness and mindfulness sanctuary.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1710",
+  "theme_color": "#2d5a27",
+  "orientation": "portrait-primary",
+  "categories": ["health", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Focus Timer",
+      "short_name": "Focus",
+      "description": "Start a focus Pomodoro session",
+      "url": "/#focus-timer",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Breathing",
+      "short_name": "Breathe",
+      "description": "Access the respiratory stabilizer",
+      "url": "/#breathing",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

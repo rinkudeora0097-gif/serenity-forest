@@ -1,0 +1,152 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account profile settings and aggregated statistics",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique user account ID matching request.auth.uid"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Public name display"
+        },
+        "email": {
+          "type": "string",
+          "description": "Private contact email"
+        },
+        "streak": {
+          "type": "integer",
+          "description": "Active daily engagement streak"
+        },
+        "totalFocusMinutes": {
+          "type": "integer",
+          "description": "Total focus minutes logged in timer sessions"
+        },
+        "completedMeditations": {
+          "type": "integer",
+          "description": "Total completed audio center guided meditations"
+        },
+        "selectedAchievementIdx": {
+          "type": "integer",
+          "description": "Active displayed achievement stage index 0-6"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Modification timestamp"
+        }
+      },
+      "required": ["userId", "displayName", "email", "streak", "totalFocusMinutes", "completedMeditations", "selectedAchievementIdx", "createdAt", "updatedAt"]
+    },
+    "MoodLog": {
+      "title": "Mood Log",
+      "description": "Trace emotional baseline over calendar schedules",
+      "type": "object",
+      "properties": {
+        "moodId": {
+          "type": "string",
+          "description": "Selected mood category key (e.g. happy, calm)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Abbreviated system calendar date (e.g. Jun 11)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Record timestamp"
+        }
+      },
+      "required": ["moodId", "date", "timestamp"]
+    },
+    "JournalEntry": {
+      "title": "Journal Entry",
+      "description": "Unfolding gratitude scrolls planted digitally",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Content draft for positive wellness reflections"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Planted timestamp"
+        }
+      },
+      "required": ["text", "timestamp"]
+    },
+    "FocusSession": {
+      "title": "Focus Session",
+      "description": "Completed seedling tree session logs",
+      "type": "object",
+      "properties": {
+        "duration": {
+          "type": "integer",
+          "description": "Duration length in seconds"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Active botanical focus category (e.g. Deep Writing)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "End session seed planting timestamp"
+        }
+      },
+      "required": ["duration", "tag", "timestamp"]
+    },
+    "MeditationHistory": {
+      "title": "Meditation History",
+      "description": "Audio acoustic meditation session archives",
+      "type": "object",
+      "properties": {
+        "activity": {
+          "type": "string",
+          "description": "Guided wellness program activity name"
+        },
+        "duration": {
+          "type": "string",
+          "description": "Session timeline duration"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Log completion timestamp"
+        }
+      },
+      "required": ["activity", "duration", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Primary user profile document containing key wellness aggregates"
+    },
+    "/users/{userId}/mood_logs/{logId}": {
+      "schema": "MoodLog",
+      "description": "Interactive emotional chronicle maps"
+    },
+    "/users/{userId}/journal_entries/{entryId}": {
+      "schema": "JournalEntry",
+      "description": "Stored positive gratitude scrolls logs"
+    },
+    "/users/{userId}/focus_sessions/{sessionId}": {
+      "schema": "FocusSession",
+      "description": "Historic seed timer Pomodoro focus logs"
+    },
+    "/users/{userId}/meditations/{meditationId}": {
+      "schema": "MeditationHistory",
+      "description": "Guided acoustic meditation logs"
+    }
+  }
+}

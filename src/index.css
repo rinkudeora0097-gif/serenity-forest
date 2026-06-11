@@ -5,27 +5,152 @@
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   
-  --color-forest-950: #13240c;
-  --color-forest-900: #1B3012;
-  --color-forest-800: #2D4F1E;
-  --color-forest-700: #3E642E;
-  --color-forest-600: #4B773C;
-  --color-forest-500: #5C8C4E;
-  --color-sage-400: #9DBEBB;
-  --color-sage-300: #B4CECC;
-  --color-sage-200: #D0E0DE;
-  --color-sage-100: #EBF2F1;
-  --color-earth-900: #2D4F1E;
-  --color-earth-800: #3E642E;
-  --color-earth-700: #5C8C4E;
-  --color-earth-600: #9DBEBB;
-  --color-beige-200: #E3E6DC;
-  --color-beige-100: #EFF1EB;
-  --color-beige-50: #F8F9F3;
-  --color-sky-500: #9DBEBB;
-  --color-sky-100: #EBF2F1;
-  --color-peach-light: #f5cfc4;
-  --color-peach-accent: #E07A5F;
+  --color-forest-950: var(--forest-950);
+  --color-forest-900: var(--forest-900);
+  --color-forest-800: var(--forest-800);
+  --color-forest-700: var(--forest-700);
+  --color-forest-600: var(--forest-600);
+  --color-forest-500: var(--forest-500);
+  --color-sage-400: var(--sage-400);
+  --color-sage-300: var(--sage-300);
+  --color-sage-200: var(--sage-200);
+  --color-sage-100: var(--sage-100);
+  --color-earth-900: var(--earth-900);
+  --color-earth-800: var(--earth-800);
+  --color-earth-700: var(--earth-700);
+  --color-earth-600: var(--earth-600);
+  --color-beige-200: var(--beige-200);
+  --color-beige-100: var(--beige-100);
+  --color-beige-50: var(--beige-50);
+  --color-sky-500: var(--sky-500);
+  --color-sky-100: var(--sky-100);
+  --color-peach-light: var(--peach-light);
+  --color-peach-accent: var(--peach-accent);
+}
+
+:root {
+  --forest-950: #13240c;
+  --forest-900: #1B3012;
+  --forest-800: #2D4F1E;
+  --forest-700: #3E642E;
+  --forest-600: #4B773C;
+  --forest-500: #5C8C4E;
+  --sage-400: #9DBEBB;
+  --sage-300: #B4CECC;
+  --sage-200: #D0E0DE;
+  --sage-100: #EBF2F1;
+  --earth-900: #2D4F1E;
+  --earth-800: #3E642E;
+  --earth-700: #5C8C4E;
+  --earth-600: #9DBEBB;
+  --beige-200: #E3E6DC;
+  --beige-100: #EFF1EB;
+  --beige-50: #F8F9F3;
+  --sky-500: #9DBEBB;
+  --sky-100: #EBF2F1;
+  --peach-light: #f5cfc4;
+  --peach-accent: #E07A5F;
+}
+
+.dark {
+  --forest-950: #010401;
+  --forest-900: #ecf3ea;
+  --forest-800: #cfe1cc;
+  --forest-700: #a2c69c;
+  --forest-600: #7eb376;
+  --forest-500: #629c5a;
+  --sage-400: #486a65;
+  --sage-300: #2f4945;
+  --sage-200: #1b2f2c;
+  --sage-100: #0c1816;
+  --earth-900: #ecf3ea;
+  --earth-800: #cfe1cc;
+  --earth-700: #629c5a;
+  --earth-600: #486a65;
+  --beige-200: #142314;
+  --beige-100: #0b150a;
+  --beige-50: #040904;
+  --sky-500: #507b78;
+  --sky-100: #0b1a17;
+  --peach-light: #2c1511;
+  --peach-accent: #ff8e75;
+}
+
+/* Specific Style Overrides for Midnight Forest */
+.dark {
+  /* Dynamic page color transitions */
+  &, *, *::before, *::after {
+    transition-property: background-color, border-color, text-decoration-color, fill, stroke;
+    transition-duration: 250ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Redefine light backgrounds to premium pine woodland woodglass */
+  .bg-white,
+  .bg-white\/50,
+  .bg-white\/40,
+  .bg-white\/70,
+  .bg-white\/80 {
+    background-color: rgba(9, 21, 10, 0.82) !important;
+    backdrop-filter: blur(14px);
+    border-color: rgba(165, 214, 167, 0.12) !important;
+  }
+
+  .hover\:bg-white:hover {
+    background-color: rgba(16, 36, 17, 0.95) !important;
+  }
+
+  /* Specific borders and shadows targeting */
+  .border-forest-800\/10,
+  .border-stone-200,
+  .border-stone-200\/60,
+  .border-stone-200\/80,
+  .border-forest-800\/5,
+  .border-sage-300 {
+    border-color: rgba(162, 198, 156, 0.16) !important;
+  }
+
+  /* Secondary texts and labels */
+  .text-stone-500,
+  .text-forest-800\/70,
+  .text-forest-800\/60,
+  .text-forest-850,
+  .text-forest-800\/85,
+  .text-forest-800\/80 {
+    color: #9ab49d !important;
+  }
+
+  /* Deep frames */
+  .bg-stone-50 {
+    background-color: #0c1c0c !important;
+  }
+
+  .shadow-xs,
+  .shadow-sm,
+  .shadow-md {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  #nav-bar {
+    background-color: rgba(4, 9, 4, 0.75) !important;
+    border-bottom: 1px solid rgba(165, 214, 167, 0.1) !important;
+  }
+
+  .bg-emerald-50 {
+    background-color: rgba(14, 43, 20, 0.65) !important;
+    color: #a2c69c !important;
+    border-color: rgba(162, 198, 156, 0.25) !important;
+  }
+
+  .glass-nature {
+    background: rgba(8, 20, 9, 0.85) !important;
+    border-color: rgba(165, 214, 167, 0.15) !important;
+  }
+
+  ::selection {
+    background-color: #3b5f35 !important;
+    color: #ecf3ea !important;
+  }
 }
 
 /* Custom Nature Animations */

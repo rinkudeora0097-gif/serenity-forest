@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Leaf, Flower2, HelpCircle, ArrowRight, Download, Laptop, Smartphone,
   Flame, Compass, Wind, Smile, BookOpen, Sparkles, RefreshCw, Moon, 
@@ -6,7 +6,7 @@ import {
   ArrowUpRight, Feather, Github, Star, ChevronRight
 } from 'lucide-react';
 
-import NatureBackground from './components/NatureBackground';
+import Forest3DCanvas from './components/Forest3DCanvas';
 import EmergencyRelax from './components/EmergencyRelax';
 import MoodWellnessSystem from './components/MoodWellnessSystem';
 import InteractivePhoneMockup from './components/InteractivePhoneMockup';
@@ -14,18 +14,132 @@ import AchievementJourney from './components/AchievementJourney';
 import ContactFAQ from './components/ContactFAQ';
 import ResetMode from './components/ResetMode';
 import brandLogoImage from './assets/images/serenity_forest_elegant_logo_1781092348423.png';
+import { useAuth } from './contexts/AuthContext';
+import AuthGateway from './components/AuthGateway';
+import UserProfilePage from './components/UserProfilePage';
+import PrivacyPolicy from './components/PrivacyPolicy';
 
 export default function App() {
+  const { user, loading } = useAuth();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeFeatureTab, setActiveFeatureTab] = useState<'all' | 'focus' | 'mind' | 'tracking'>('all');
   const [installStatus, setInstallStatus] = useState<'idle' | 'installing' | 'completed'>('idle');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
   const [isResetModeOpen, setIsResetModeOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<'login' | 'signup' | 'forgot'>('login');
 
-  // Trigger simulated PWA installation
-  const handleInstallApp = () => {
-    setInstallStatus('installing');
-    setTimeout(() => {
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      return savedTheme === 'dark';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the default mini-infobar on mobile browsers
+      e.preventDefault();
+      // Store the event so it can be triggered later
+      setDeferredPrompt(e);
+      // Update state to indicate the app can be installed natively
+      setIsInstallable(true);
+      console.log('[Serenity Forest PWA] beforeinstallprompt captured.');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if currently running in standalone (installed) mode
+    if (
+      window.matchMedia('(display-mode: standalone)').matches || 
+      (window.navigator as any).standalone === true
+    ) {
       setInstallStatus('completed');
-    }, 2000);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAuth = (e: any) => {
+      if (e.detail?.tab === 'signup') {
+        setAuthTab('signup');
+      } else if (e.detail?.tab === 'forgot') {
+        setAuthTab('forgot');
+      } else {
+        setAuthTab('login');
+      }
+      setIsAuthOpen(true);
+    };
+    window.addEventListener('open-auth-modal', handleOpenAuth);
+    return () => window.removeEventListener('open-auth-modal', handleOpenAuth);
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDarkMode(prev => !prev);
+  };
+
+  // Render peaceful loading spinner during setup checks
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-beige-50 dark:bg-stone-950 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
+        <div className="relative">
+          <div className="w-12 h-12 border-4 border-emerald-900/20 border-t-emerald-800 rounded-full animate-spin" />
+          <Leaf className="w-5 h-5 text-emerald-800 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 animate-pulse" />
+        </div>
+        <p className="font-serif text-xs font-bold text-stone-500 animate-pulse uppercase tracking-widest">
+          Syncing Serene Sanctuary...
+        </p>
+      </div>
+    );
+  }
+
+
+  // Trigger Progressive Web App native installation
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      // Graceful fallback for non-Chrome/Safari iOS or if prompt hasn't fired
+      setInstallStatus('installing');
+      setTimeout(() => {
+        setInstallStatus('completed');
+        alert("🌿 Serenity Forest: To install on Apple devices, tap the 'Share' icon in your Safari browser navigation bar and select 'Add to Home Screen'. For Android/Desktop browsers without native prompts, the app caches dynamically for offline support!");
+      }, 1200);
+      return;
+    }
+
+    try {
+      setInstallStatus('installing');
+      deferredPrompt.prompt();
+      
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`[Serenity Forest PWA] User prompt decision: ${outcome}`);
+      
+      if (outcome === 'accepted') {
+        setInstallStatus('completed');
+        setDeferredPrompt(null);
+        setIsInstallable(false);
+      } else {
+        setInstallStatus('idle');
+      }
+    } catch (err) {
+      console.warn('[Serenity Forest PWA] Installation request cancelled or failed:', err);
+      setInstallStatus('idle');
+    }
   };
 
   const coreFeatures = [
@@ -102,6 +216,68 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Midnight Forest Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 sm:p-2 border border-forest-800/15 bg-white/50 hover:bg-white text-forest-800 hover:text-forest-900 rounded-full transition duration-150 flex items-center justify-center cursor-pointer shadow-sm relative group"
+              title={isDarkMode ? "Switch to Sunny Light Mode" : "Switch to Midnight Forest Dark Mode"}
+              aria-label="Theme Toggle"
+              id="theme-toggle-btn"
+            >
+              {isDarkMode ? (
+                <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 hover:rotate-45 transition duration-500" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-800 hover:scale-110 transition duration-300" />
+              )}
+            </button>
+
+            {/* Download App Shortcut */}
+            <a
+              href="#download-section"
+              className="px-2.5 py-1.5 border border-amber-600/35 bg-amber-50 hover:bg-amber-100 text-[#7a4f1d] text-[10px] sm:text-[11px] font-bold uppercase rounded-full tracking-wide transition duration-150 flex items-center gap-1 cursor-pointer shadow-xs hidden md:flex animate-fade-in"
+              id="header-download-btn"
+            >
+              <Download className="w-3 h-3 text-[#a7733a]" />
+              <span>Download App</span>
+            </a>
+
+            {!user ? (
+              <>
+                <button
+                  onClick={() => {
+                    setAuthTab('login');
+                    setIsAuthOpen(true);
+                  }}
+                  className="px-3 py-1.5 border border-forest-800/15 bg-white/50 hover:bg-white text-forest-800 text-[10px] sm:text-[11px] font-bold uppercase rounded-full transition duration-150 cursor-pointer shadow-sm"
+                  id="nav-login-btn"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => {
+                    setAuthTab('signup');
+                    setIsAuthOpen(true);
+                  }}
+                  className="px-3 py-1.5 bg-forest-800 hover:bg-[#1f3614] text-white text-[10px] sm:text-[11px] font-bold uppercase rounded-full transition duration-150 cursor-pointer shadow-md shadow-emerald-900/10"
+                  id="nav-signup-btn"
+                >
+                  Sign Up
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Account Profile Cabinet Toggle */}
+                <button
+                  onClick={() => setIsProfileOpen(true)}
+                  className="p-1.5 sm:p-2 border border-forest-800/15 bg-white/50 hover:bg-white text-forest-800 hover:text-forest-900 rounded-full transition duration-150 flex items-center justify-center cursor-pointer shadow-sm relative"
+                  title="Open Sanctuary Cabinet Profile"
+                  id="profile-cabinet-toggle-btn"
+                >
+                  <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-800" />
+                </button>
+              </>
+            )}
+
             <button
               onClick={() => setIsResetModeOpen(true)}
               className="px-3 py-1.5 border border-emerald-600/30 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] sm:text-[11px] font-bold uppercase rounded-full tracking-wide transition duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm animate-pulse"
@@ -126,8 +302,8 @@ export default function App() {
       {/* --- HERO SECTION --- */}
       <section id="hero-section" className="relative py-16 sm:py-24 lg:py-32 px-6 overflow-hidden">
         
-        {/* Animated magical forest background */}
-        <NatureBackground />
+        {/* Animated magical 3D forest background */}
+        <Forest3DCanvas isDarkMode={isDarkMode} />
 
         <div className="relative z-10 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
@@ -150,27 +326,35 @@ export default function App() {
             {/* Quick stats inline strip to validate premium context */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-2 border-t border-b border-forest-800/10">
               <div className="flex gap-2.5 items-center">
-                <span className="text-xl sm:text-2xl font-bold font-serif text-forest-900">0 Ads</span>
-                <span className="text-[10px] text-forest-800/60 uppercase font-mono">Uncompromised Privacy</span>
+                <span className="text-xl sm:text-2xl font-bold font-serif text-[#16380c] dark:text-[#aee2a5]">0 Ads</span>
+                <span className="text-[10px] text-[#1e4e11] dark:text-[#8abf81] uppercase font-mono font-semibold">Uncompromised Privacy</span>
               </div>
               <div className="flex gap-2.5 items-center">
-                <span className="text-xl sm:text-2xl font-bold font-serif text-forest-900">100%</span>
-                <span className="text-[10px] text-forest-800/60 uppercase font-mono">Offline Sandbox</span>
+                <span className="text-xl sm:text-2xl font-bold font-serif text-[#16380c] dark:text-[#aee2a5]">100%</span>
+                <span className="text-[10px] text-[#1e4e11] dark:text-[#8abf81] uppercase font-mono font-semibold">Offline Sandbox</span>
               </div>
               <div className="flex gap-2.5 items-center">
-                <span className="text-xl sm:text-2xl font-bold font-serif text-forest-900">16+</span>
-                <span className="text-[10px] text-forest-800/60 uppercase font-mono">Curated tools</span>
+                <span className="text-xl sm:text-2xl font-bold font-serif text-[#16380c] dark:text-[#aee2a5]">16+</span>
+                <span className="text-[10px] text-[#1e4e11] dark:text-[#8abf81] uppercase font-mono font-semibold">Curated tools</span>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-              <a 
-                href="#download-section"
+              <button 
+                onClick={() => {
+                  if (user) {
+                    const el = document.getElementById('download-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    setAuthTab('signup');
+                    setIsAuthOpen(true);
+                  }
+                }}
                 className="px-6 py-3.5 bg-forest-800 hover:bg-[#1f3614] text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all scale-100 hover:scale-[1.02] flex items-center justify-center gap-2 group cursor-pointer text-sm"
               >
                 <span>Get Started</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition" />
-              </a>
+              </button>
 
               <button
                 onClick={handleInstallApp}
@@ -293,9 +477,9 @@ export default function App() {
                 </p>
               </div>
               <div className="space-y-1">
-                <h4 className="font-serif font-bold text-sm text-forest-900">🔒 On-Device Sandbox Storage</h4>
+                <h4 className="font-serif font-bold text-sm text-forest-900">🔒 Secure Cloud Storage</h4>
                 <p className="text-xs text-forest-800/60 leading-normal">
-                  No cloud metrics, no logins required, block unnecessary tracking loops from tracking you.
+                  Encrypted synchronization with secure data boundaries to protect your personal mental sanctuary.
                 </p>
               </div>
             </div>
@@ -636,13 +820,12 @@ export default function App() {
               <h5 className="text-xs font-bold uppercase tracking-widest text-white">Legal Boundaries</h5>
               <ul className="space-y-2 text-xs">
                 <li>
-                  <a 
-                    href="#" 
-                    onClick={(e) => { e.preventDefault(); alert("Privacy Policy Statement: All gratitude journal scrolls, logged mood baseline entry charts, and breathing habits parameters are strictly contained on the browser or app host space local storage and never relayed."); }}
-                    className="hover:text-[#a1d494] transition"
+                  <button 
+                    onClick={() => setIsPrivacyOpen(true)}
+                    className="hover:text-[#a1d494] transition text-left cursor-pointer"
                   >
                     Privacy Policy
-                  </a>
+                  </button>
                 </li>
                 <li>
                   <a 
@@ -663,6 +846,28 @@ export default function App() {
 
       {/* --- FLOATING FULL SCREEN RESET MODE OVERLAY --- */}
       <ResetMode isOpen={isResetModeOpen} onClose={() => setIsResetModeOpen(false)} />
+
+      {/* --- PRIVACY POLICY COMPREHENSIVE OVERLAY --- */}
+      <PrivacyPolicy isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+
+      {/* --- USER ACCOUNT PROFILE MODAL OVERLAY --- */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 bg-stone-950/75 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto relative rounded-[2rem] bg-stone-50 dark:bg-stone-900 border border-stone-200/50 dark:border-white/5 shadow-2xl">
+            <UserProfilePage onClose={() => setIsProfileOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* --- USER AUTH GATEWAY MODAL OVERLAY --- */}
+      {isAuthOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <AuthGateway 
+            initialTab={authTab === 'forgot' ? 'forgot' : authTab} 
+            onClose={() => setIsAuthOpen(false)} 
+          />
+        </div>
+      )}
 
     </div>
   );

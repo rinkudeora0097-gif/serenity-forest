@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- GLOBAL SAFETY NET ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- HELPER PRIMITIVES ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- ENTITY SCHEMA VALIDATIONS (ANTI-UPDATE-GAP) ---
+    function isValidUser(data) {
+      return data.userId == request.auth.uid 
+        && data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 200
+        && data.streak is int && data.streak >= 0
+        && data.totalFocusMinutes is int && data.totalFocusMinutes >= 0
+        && data.completedMeditations is int && data.completedMeditations >= 0
+        && data.selectedAchievementIdx is int && data.selectedAchievementIdx >= 0 && data.selectedAchievementIdx <= 6
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMoodLog(data) {
+      return data.moodId is string && data.moodId.size() > 0 && data.moodId.size() <= 100
+        && data.date is string && data.date.size() > 0 && data.date.size() <= 20
+        && data.timestamp is timestamp;
+    }
+
+    function isValidJournalEntry(data) {
+      return data.text is string && data.text.size() > 0 && data.text.size() <= 5000
+        && data.timestamp is timestamp;
+    }
+
+    function isValidFocusSession(data) {
+      return data.duration is int && data.duration >= 0 && data.duration <= 86400
+        && data.tag is string && data.tag.size() > 0 && data.tag.size() <= 100
+        && data.timestamp is timestamp;
+    }
+
+    function isValidMeditation(data) {
+      return data.activity is string && data.activity.size() > 0 && data.activity.size() <= 100
+        && data.duration is string && data.duration.size() > 0 && data.duration.size() <= 50
+        && data.timestamp is timestamp;
+    }
+
+    // --- COLLECTION ACCESS SCHEMAS ---
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // Subcollection: Mood Chronicles
+      match /mood_logs/{logId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(logId)
+          && request.resource.data.keys().hasAll(['moodId', 'date', 'timestamp'])
+          && request.resource.data.keys().size() == 3
+          && isValidMoodLog(request.resource.data)
+          && request.resource.data.timestamp == request.time;
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+
+      // Subcollection: Gratitude Scroll Logs
+      match /journal_entries/{entryId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(entryId)
+          && request.resource.data.keys().hasAll(['text', 'timestamp'])
+          && request.resource.data.keys().size() == 2
+          && isValidJournalEntry(request.resource.data)
+          && request.resource.data.timestamp == request.time;
+        allow delete: if isOwner(userId) && isValidId(entryId);
+      }
+
+      // Subcollection: Seed Focus Timer Records
+      match /focus_sessions/{sessionId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(sessionId)
+          && request.resource.data.keys().hasAll(['duration', 'tag', 'timestamp'])
+          && request.resource.data.keys().size() == 3
+          && isValidFocusSession(request.resource.data)
+          && request.resource.data.timestamp == request.time;
+        allow delete: if isOwner(userId) && isValidId(sessionId);
+      }
+
+      // Subcollection: Guided Audios meditations
+      match /meditations/{meditationId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(meditationId)
+          && request.resource.data.keys().hasAll(['activity', 'duration', 'timestamp'])
+          && request.resource.data.keys().size() == 3
+          && isValidMeditation(request.resource.data)
+          && request.resource.data.timestamp == request.time;
+        allow delete: if isOwner(userId) && isValidId(meditationId);
+      }
+    }
+  }
+}

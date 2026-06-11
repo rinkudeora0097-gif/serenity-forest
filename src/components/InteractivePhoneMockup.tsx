@@ -3,6 +3,7 @@ import {
   Compass, Heart, Calendar, Play, Pause, RefreshCw, BarChart2, BookOpen, 
   Smartphone, Plus, CheckCircle, Flame, Moon, Sparkles, Smile, Sun, Feather 
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 type TabType = 'Home Dashboard' | 'Focus Timer' | 'Meditation Center' | 'Nature Sounds' | 'Mood Tracker' | 'Gratitude Journal' | 'Wellness Statistics';
 
@@ -18,26 +19,61 @@ const appTabs: { name: TabType; description: string; tag: string }[] = [
 
 export default function InteractivePhoneMockup() {
   const [activeTab, setActiveTab] = useState<TabType>('Home Dashboard');
+  const [interactiveAuthPrompt, setInteractiveAuthPrompt] = useState<string | null>(null);
+
+  const triggerAuthModal = (tab: 'login' | 'signup') => {
+    const event = new CustomEvent('open-auth-modal', { detail: { tab } });
+    window.dispatchEvent(event);
+  };
+  
+  // Real Firestore Context integration
+  const { 
+    user,
+    profile: realProfile, 
+    moodLogs: realMoodLogs, 
+    journalEntries: realJournalEntries, 
+    focusSessions: realFocusSessions, 
+    meditations: realMeditations,
+    addMoodLog, 
+    addJournalEntry, 
+    addFocusSession, 
+    addMeditationHistory 
+  } = useAuth();
+
+  // Guest mock databases so visitors get a fully responsive sandbox before registering
+  const [guestProfile, setGuestProfile] = useState({
+    displayName: 'Forest Guest',
+    streak: 1,
+    totalFocusMinutes: 45,
+    completedMeditations: 3,
+    selectedAchievementIdx: 1,
+  });
+
+  const [guestMoodLogs, setGuestMoodLogs] = useState<any[]>([
+    { id: '1', moodId: 'Calm 🌿', date: 'Jun 11', timestamp: new Date() },
+    { id: '2', moodId: 'Happy ☀️', date: 'Jun 10', timestamp: new Date() },
+  ]);
+
+  const [guestJournalEntries, setGuestJournalEntries] = useState<any[]>([
+    { id: '1', text: 'I am grateful for the cool wind in the morning.' },
+    { id: '2', text: 'Thankful for a quiet space to focus.' }
+  ]);
+
+  const activeUser = user;
+  const profile = activeUser ? realProfile : guestProfile;
+  const moodLogs = activeUser ? realMoodLogs : guestMoodLogs;
+  const journalEntries = activeUser ? realJournalEntries : guestJournalEntries;
 
   // Focus Timer States
   const [timerLeft, setTimerLeft] = useState(1500); // 25:00
   const [timerOn, setTimerOn] = useState(false);
   const [timerTag, setTimerTag] = useState('Deep Writing');
 
-  // Gratitude States
+  // Gratitude entry drafts
   const [gratitudeDraft, setGratitudeDraft] = useState('');
-  const [gratitudeSeeds, setGratitudeSeeds] = useState<string[]>([
-    "Today's sunrise through the living room layout",
-    "A hot cup of green tea on a quiet Tuesday",
-    "Feeling restored after the deep rainstorm"
-  ]);
 
-  // Mood Tracker States
+  // Mood Tracker State
   const [logMood, setLogMood] = useState('Calm 🌿');
-  const [moodLogs, setMoodLogs] = useState<{ date: string; mood: string }[]>([
-    { date: 'Jun 8', mood: 'Calm 🌿' },
-    { date: 'Jun 9', mood: 'Relaxed 🌊' },
-  ]);
 
   // Nature Sounds states
   const [activeSounds, setActiveSounds] = useState<{ [key: string]: boolean }>({
@@ -55,23 +91,71 @@ export default function InteractivePhoneMockup() {
       }, 1000);
     } else if (timerLeft === 0) {
       setTimerOn(false);
+      if (activeUser) {
+        addFocusSession(1500, timerTag).catch(console.error);
+      } else {
+        setGuestProfile(prev => ({
+          ...prev,
+          totalFocusMinutes: prev.totalFocusMinutes + 25
+        }));
+        alert(`🎓 Guest Sandbox: Focus session of 25 mins completed! Create an account to log focus streaks.`);
+        setInteractiveAuthPrompt("Sign in to save focus sessions to statistics!");
+      }
     }
     return () => clearInterval(focusInterval);
   }, [timerOn, timerLeft]);
 
-  const addGratitude = (e: React.FormEvent) => {
+  const addGratitude = async (e: React.FormEvent) => {
     e.preventDefault();
     if (gratitudeDraft.trim()) {
-      setGratitudeSeeds([gratitudeDraft.trim(), ...gratitudeSeeds]);
-      setGratitudeDraft('');
+      if (activeUser) {
+        try {
+          await addJournalEntry(gratitudeDraft.trim());
+          setGratitudeDraft('');
+        } catch (err) {
+          console.error("Error setting journal", err);
+        }
+      } else {
+        const newLog = { id: Date.now().toString(), text: gratitudeDraft.trim(), timestamp: new Date() };
+        setGuestJournalEntries(prev => [newLog, ...prev]);
+        setGratitudeDraft('');
+        setInteractiveAuthPrompt("Register an account to sync your gratitude scrolls!");
+      }
     }
   };
 
-  const registerMood = (m: string) => {
+  const registerMood = async (m: string) => {
     setLogMood(m);
-    // Add only if not already logged today
-    const dateStr = 'Jun 10';
-    setMoodLogs([{ date: dateStr, mood: m }, ...moodLogs.filter(log => log.date !== dateStr)]);
+    const dateStr = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    if (activeUser) {
+      try {
+        await addMoodLog(m, dateStr);
+      } catch (err) {
+        console.error("Error setting mood log", err);
+      }
+    } else {
+      const newLog = { id: Date.now().toString(), moodId: m, date: dateStr, timestamp: new Date() };
+      setGuestMoodLogs(prev => [newLog, ...prev]);
+      setInteractiveAuthPrompt("Create a personalized account to save your logs permanently!");
+    }
+  };
+
+  const handleMeditationPlay = async (activity: string, duration: string) => {
+    if (activeUser) {
+      try {
+        await addMeditationHistory(activity, duration);
+        alert(`🧘 Guided Breath Complete! You completed: "${activity}" (${duration}). Nice work!`);
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      setGuestProfile(prev => ({
+        ...prev,
+        completedMeditations: prev.completedMeditations + 1
+      }));
+      alert(`🧘 Guest Sandbox: You completed "${activity}" (${duration}). Sign up to track your meditation streaks!`);
+      setInteractiveAuthPrompt("Sign up to save meditation achievements!");
+    }
   };
 
   // Convert seconds to clean display MM:SS
@@ -80,6 +164,7 @@ export default function InteractivePhoneMockup() {
     const secs = totalSec % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
 
   return (
     <div className="py-16 px-6 max-w-7xl mx-auto" id="download-section-shortcut">
@@ -157,41 +242,91 @@ export default function InteractivePhoneMockup() {
               
               {/* Dynamic App Mockup Screen Views */}
               <div className="flex-1 flex flex-col">
+                
+                {interactiveAuthPrompt && (
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex flex-col items-start text-left space-y-1.5 animate-fade-in mb-3">
+                    <p className="text-[10px] text-blue-900 font-bold leading-tight">✨ {interactiveAuthPrompt}</p>
+                    <div className="flex gap-2 w-full">
+                      <button
+                        onClick={() => {
+                          triggerAuthModal('signup');
+                          setInteractiveAuthPrompt(null);
+                        }}
+                        className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[8px] font-bold cursor-pointer transition uppercase tracking-wider"
+                      >
+                        Sign Up Free
+                      </button>
+                      <button
+                        onClick={() => setInteractiveAuthPrompt(null)}
+                        className="px-2 py-1 bg-stone-300 hover:bg-stone-400 text-stone-700 rounded-lg text-[8px] font-bold cursor-pointer transition uppercase"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* TAB 1: HOME DASHBOARD */}
                 {activeTab === 'Home Dashboard' && (
                   <div className="space-y-4 animate-fade-in">
                     <div className="flex justify-between items-center">
-                      <div>
-                        <span className="text-[10px] font-semibold text-stone-500">Welcome to Serenity</span>
-                        <h4 className="font-serif text-lg font-bold text-[#154212]">Rigvedya S.</h4>
+                      <div className="max-w-[150px]">
+                        <span className="text-[10px] font-semibold text-stone-500 block truncate">
+                          {['Seed 🌱', 'Sprout 🌿', 'Sapling 🌲', 'Young Tree 🌳', 'Strong Oak 🪵', 'Forest Guardian 🧙', 'Serenity Master 👑'][profile?.selectedAchievementIdx ?? 0]}
+                        </span>
+                        <h4 className="font-serif text-base font-bold text-[#154212] truncate mt-0.5">
+                          {profile?.displayName || 'Forest Guest'}
+                        </h4>
                       </div>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-bold">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-bold shrink-0">
                         <Flame className="w-3.5 h-3.5 fill-amber-500 text-transparent" />
-                        <span>24 Streak</span>
+                        <span>{profile?.streak ?? 1} Streak</span>
                       </div>
                     </div>
 
+                    {!activeUser && (
+                      <div className="p-3 bg-amber-500/15 border border-amber-500/30 rounded-2xl flex flex-col items-center text-center space-y-1.5 animate-pulse">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-amber-900 font-mono">🔒 Guest Explorer Sandbox</span>
+                        <p className="text-[9px] text-amber-800 leading-tight">
+                          Sync achievements, custom sound mixes, and logs by establishing an account.
+                        </p>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => triggerAuthModal('login')}
+                            className="px-2.5 py-1 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-[8px] font-bold cursor-pointer transition uppercase"
+                          >
+                            Sign In
+                          </button>
+                          <button
+                            onClick={() => triggerAuthModal('signup')}
+                            className="px-2.5 py-1 bg-[#2d5a27] hover:bg-[#1f3e1a] text-white rounded-lg text-[8px] font-bold cursor-pointer transition uppercase font-semibold"
+                          >
+                            Sign Up
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Calming banner */}
                     <div className="p-3.5 rounded-2xl bg-forest-600/10 border border-forest-500/20 text-center space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-forest-700">Daily Affirmation</span>
-                      <p className="font-serif text-xs italic text-forest-900 leading-normal">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-forest-700 font-mono">Daily Affirmation</span>
+                      <p className="font-serif text-[11px] italic text-forest-900 leading-normal">
                         "Like trees rooted deep in wild mountains, I too can withstand the busy winds."
                       </p>
                     </div>
 
                     {/* Forest growth tree widget */}
                     <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-xs flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-[#e2f3e5] border border-[#a1d494] flex items-center justify-center">
-                        🌿
+                      <div className="w-10 h-10 rounded-full bg-[#e2f3e5] border border-[#a1d494] flex items-center justify-center text-xl shrink-0">
+                        {['🌱', '🌿', '🌲', '🌳', '🪵', '🧙', '👑'][profile?.selectedAchievementIdx ?? 0]}
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between text-[11px] font-bold">
-                          <span>Active Seed: 'Sapling'</span>
-                          <span>64%</span>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex justify-between text-[11px] font-bold text-stone-850">
+                          <span className="truncate">Active Level: {['Seed', 'Sprout', 'Sapling', 'Young Tree', 'Strong Oak', 'Forest Guardian', 'Serenity Master'][profile?.selectedAchievementIdx ?? 0]}</span>
+                          <span>{Math.min(100, Math.round(((profile?.totalFocusMinutes ?? 0) / 1000) * 100))}%</span>
                         </div>
                         <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-[#2d5a27] h-full rounded-full" style={{ width: '64%' }} />
+                          <div className="bg-[#2d5a27] h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.round(((profile?.totalFocusMinutes ?? 0) / 1000) * 100))}%` }} />
                         </div>
                       </div>
                     </div>
@@ -302,7 +437,10 @@ export default function InteractivePhoneMockup() {
                         <h5 className="font-bold text-xs text-stone-900">1. Anxiety Clearing Winds</h5>
                         <p className="text-[9px] text-stone-500">Release stress & deep brain speed</p>
                       </div>
-                      <button className="w-8 h-8 rounded-full bg-forest-600 flex items-center justify-center text-white cursor-pointer hover:bg-forest-700 transition">
+                      <button 
+                        onClick={() => handleMeditationPlay('Anxiety Clearing Winds', '10m')}
+                        className="w-8 h-8 rounded-full bg-forest-600 flex items-center justify-center text-white cursor-pointer hover:bg-forest-700 transition"
+                      >
                         <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                       </button>
                     </div>
@@ -312,7 +450,10 @@ export default function InteractivePhoneMockup() {
                         <h5 className="font-bold text-xs text-forest-900">2. Ancient Cedar Whispers</h5>
                         <p className="text-[9px] text-forest-700">Grounding and spiritual clarity</p>
                       </div>
-                      <button className="w-8 h-8 rounded-full bg-forest-600 flex items-center justify-center text-white cursor-pointer">
+                      <button 
+                        onClick={() => handleMeditationPlay('Ancient Cedar Whispers', '15m')}
+                        className="w-8 h-8 rounded-full bg-forest-600 flex items-center justify-center text-white cursor-pointer hover:bg-forest-700 transition"
+                      >
                         <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                       </button>
                     </div>
@@ -322,13 +463,16 @@ export default function InteractivePhoneMockup() {
                         <h5 className="font-bold text-xs text-stone-900">3. Floating Stream Drift</h5>
                         <p className="text-[9px] text-stone-500">Perfect to unwind before deep sleep</p>
                       </div>
-                      <button className="w-8 h-8 rounded-full bg-forest-500 flex items-center justify-center text-white cursor-pointer">
+                      <button 
+                        onClick={() => handleMeditationPlay('Floating Stream Drift', '20m')}
+                        className="w-8 h-8 rounded-full bg-forest-500 flex items-center justify-center text-white cursor-pointer hover:bg-forest-600 transition"
+                      >
                         <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                       </button>
                     </div>
 
                     <div className="rounded-2xl p-3 bg-gradient-to-r from-[#154212] to-[#2d5a27] text-white text-center space-y-1.5">
-                      <span className="text-[9px] uppercase tracking-widest text-[#a1d494] font-bold">Ambient Active Coaching</span>
+                      <span className="text-[9px] uppercase tracking-widest text-[#a1d494] font-bold font-mono">Ambient Active Coaching</span>
                       <p className="text-[10px] text-sage-100">"Slowing down is not self-indulgent. It is vital recovery."</p>
                     </div>
                   </div>
@@ -389,14 +533,14 @@ export default function InteractivePhoneMockup() {
                     <h4 className="font-serif text-md font-bold text-[#154212] mb-1">How is today's mood?</h4>
                     
                     <div className="p-3 bg-white rounded-2xl border border-stone-200 space-y-3">
-                      <span className="text-[10px] text-stone-400 block text-center">Tap to document baseline:</span>
+                      <span className="text-[10px] text-stone-400 block text-center font-mono">Select baseline:</span>
                       
                       <div className="flex justify-around">
                         {['Calm 🌿', 'Tired 💤', 'Stressed 🔥', 'Happy ☀️'].map((m) => (
                           <button
                             key={m}
                             onClick={() => registerMood(m)}
-                            className={`p-2 rounded-xl text-center text-xs font-bold transition scale-100 active:scale-95 cursor-pointer ${logMood === m ? 'bg-forest-600/10 border border-[#2d5a27] text-forest-900 font-extrabold' : 'hover:bg-stone-50'}`}
+                            className={`p-2 rounded-xl text-center text-xs font-bold transition scale-100 active:scale-95 cursor-pointer ${logMood === m ? 'bg-forest-600/10 border border-[#2d5a27] text-forest-900 font-extrabold' : 'hover:bg-stone-50 text-stone-600'}`}
                           >
                             <span className="text-xl block mb-1">{m.split(' ')[1]}</span>
                             {m.split(' ')[0]}
@@ -406,15 +550,19 @@ export default function InteractivePhoneMockup() {
                     </div>
 
                     <div className="space-y-2">
-                      <h5 className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Weekly History Logs</h5>
+                      <h5 className="text-[9px] font-bold uppercase tracking-wider text-stone-400 font-mono">Ecosystem Chronicled Moods</h5>
                       
                       <div className="space-y-2 max-h-[140px] overflow-y-auto">
-                        {moodLogs.map((log, idx) => (
-                          <div key={idx} className="flex justify-between p-2 rounded-xl bg-white border border-stone-200 text-xs">
-                            <span className="text-stone-500 font-mono text-[10px]">{log.date}</span>
-                            <span className="font-bold text-stone-900">{log.mood}</span>
-                          </div>
-                        ))}
+                        {moodLogs && moodLogs.length > 0 ? (
+                          moodLogs.map((log) => (
+                            <div key={log.id} className="flex justify-between p-2 rounded-xl bg-white border border-stone-200 text-xs">
+                              <span className="text-stone-500 font-mono text-[10px]">{log.date || 'Today'}</span>
+                              <span className="font-bold text-[#154212]">{log.moodId}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-[10px] text-stone-450 italic py-4 text-center">No logged baseline logs today yet.</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -435,20 +583,24 @@ export default function InteractivePhoneMockup() {
                       />
                       <button
                         type="submit"
-                        className="w-full py-2 bg-gradient-to-r from-forest-800 to-forest-600 text-white rounded-full text-[10px] font-bold tracking-wider"
+                        className="w-full py-2 bg-[#2D4F1E] text-white rounded-full text-[10px] font-bold tracking-wider cursor-pointer font-mono uppercase"
                       >
                         + Plant This Seed
                       </button>
                     </form>
 
                     <div className="space-y-2">
-                      <h5 className="text-[9px] font-bold uppercase tracking-wider text-stone-400">Growing Seeds (Scrolls)</h5>
+                      <h5 className="text-[9px] font-bold uppercase tracking-wider text-stone-400 font-mono">Growing Gratitude (Scrolls)</h5>
                       <div className="space-y-2 max-h-[120px] overflow-y-auto">
-                        {gratitudeSeeds.map((seed, idx) => (
-                          <div key={idx} className="p-2.5 bg-white border border-stone-200/80 rounded-xl text-[10px] text-stone-600 italic relative leading-relaxed">
-                            "{seed}"
-                          </div>
-                        ))}
+                        {journalEntries && journalEntries.length > 0 ? (
+                          journalEntries.map((seed) => (
+                            <div key={seed.id} className="p-2.5 bg-white border border-stone-200/80 rounded-xl text-[10px] text-stone-600 italic relative leading-relaxed">
+                              "{seed.text}"
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-[10px] text-stone-450 italic py-4 text-center">Write scroll above to sow seedlings.</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -470,7 +622,7 @@ export default function InteractivePhoneMockup() {
                         {[40, 38, 25, 29, 18, 15, 11].map((val, i) => (
                           <div key={i} className="flex-1 flex flex-col items-center gap-1">
                             <div className="w-3 bg-red-800/20 rounded-full h-12 relative overflow-hidden">
-                              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-forest-600 to-[#a1d494] rounded-full" style={{ height: `${val * 2.2}%` }} />
+                              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#2d5a27] to-[#a1d494] rounded-full" style={{ height: `${val * 2.2}%` }} />
                             </div>
                             <span className="text-[8px] font-mono text-stone-400">M</span>
                           </div>
@@ -481,12 +633,12 @@ export default function InteractivePhoneMockup() {
                     {/* Numeric breakdown grids */}
                     <div className="grid grid-cols-2 gap-2 text-center text-xs">
                       <div className="p-2.5 rounded-xl bg-white border border-stone-200/80">
-                        <span className="text-[9px] text-stone-400 italic block">Sleep Sleep</span>
-                        <p className="font-extrabold text-stone-800">7h 45m</p>
+                        <span className="text-[9px] text-stone-400 italic block">Total Focus Time</span>
+                        <p className="font-extrabold text-stone-800 text-[11px]">{profile?.totalFocusMinutes ?? 0} mins</p>
                       </div>
                       <div className="p-2.5 rounded-xl bg-white border border-stone-200/80">
-                        <span className="text-[9px] text-stone-400 italic block">Mind Clarity</span>
-                        <p className="font-extrabold text-stone-800">89% Peak</p>
+                        <span className="text-[9px] text-stone-400 italic block">Completed Meditations</span>
+                        <p className="font-extrabold text-stone-800 text-[11px]">{profile?.completedMeditations ?? 0} sess</p>
                       </div>
                     </div>
                   </div>
