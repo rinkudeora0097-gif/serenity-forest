@@ -20,6 +20,11 @@ service cloud.firestore {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    // --- CONNECTION TEST RULE ---
+    match /test/connection {
+      allow get: if true;
+    }
+
     // --- ENTITY SCHEMA VALIDATIONS (ANTI-UPDATE-GAP) ---
     function isValidUser(data) {
       return data.userId == request.auth.uid 
@@ -58,7 +63,18 @@ service cloud.firestore {
 
     // --- COLLECTION ACCESS SCHEMAS ---
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId)
+        && request.resource.data.keys().hasAll(['userId', 'displayName', 'email', 'streak', 'totalFocusMinutes', 'completedMeditations', 'selectedAchievementIdx', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().size() == 9
+        && isValidUser(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner(userId) && isValidUser(request.resource.data)
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(userId);
 
       // Subcollection: Mood Chronicles
       match /mood_logs/{logId} {

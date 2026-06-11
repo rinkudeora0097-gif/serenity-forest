@@ -104,8 +104,28 @@ export default function AuthGateway({ initialTab = 'login', onClose }: AuthGatew
       await logInWithGoogle();
       setSuccessStatus("Authenticated via Google. Accessing your forest...");
     } catch (err: any) {
-      console.error(err);
-      setErrorStatus("Google verification declined or interrupted.");
+      console.error("Google authentication error:", err);
+      let errMsg = "Google verification declined or interrupted.";
+      if (err.code) {
+        if (err.code === 'auth/unauthorized-domain') {
+          errMsg = `Domain unauthorized: Please add this Vercel domain to your Firebase Console under Authentication -> Settings -> Authorized domains. (Error code: ${err.code})`;
+        } else if (err.code === 'auth/operation-not-allowed') {
+          errMsg = `Google Sign-In is disabled. Please enable it under Authentication -> Sign-in method in your Firebase Console. (Error code: ${err.code})`;
+        } else if (err.code === 'auth/popup-closed-by-user') {
+          errMsg = `The sign-in popup was closed before completing auth. Please ensure popups are allowed in your browser, complete the flow within the popup window, or try opening the app in a new tab if you are in the workspace iframe (Error code: ${err.code}).`;
+        } else if (err.code === 'auth/popup-blocked') {
+          errMsg = `The sign-in popup was blocked by your browser's popup blocker. Please allow popups for this site and try again (Error code: ${err.code}).`;
+        } else if (err.code === 'auth/cancelled-popup-request') {
+          errMsg = `The sign-in request was cancelled. This can happen if the popup is focused away, closed, or a concurrent login attempt is made (Error code: ${err.code}).`;
+        } else {
+          errMsg = `Authentication failed: ${err.message || err.code}`;
+        }
+      } else if (err.message) {
+        errMsg = `Error: ${err.message}`;
+      } else {
+        errMsg = `Google verification declined or interrupted. Details: ${typeof err === 'object' ? JSON.stringify(err) : String(err)}`;
+      }
+      setErrorStatus(errMsg);
     } finally {
       setLoading(false);
     }

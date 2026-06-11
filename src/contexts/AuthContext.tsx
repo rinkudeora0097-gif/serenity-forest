@@ -263,8 +263,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // --- Auth Handlers ---
 
   async function signUpWithEmail(email: string, pass: string, name: string) {
+    let userUid: string | null = null;
     try {
       const res = await createUserWithEmailAndPassword(auth, email, pass);
+      userUid = res.user.uid;
       await firebaseUpdateProfile(res.user, { displayName: name });
       
       // Initialize layout profile document synchronously on signup
@@ -284,6 +286,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(initialProfile);
     } catch (err: any) {
       console.error("Sign Up issue", err);
+      if (err && (err.code === 'permission-denied' || (err.message && err.message.includes('permission')))) {
+        handleFirestoreError(err, OperationType.CREATE, userUid ? `users/${userUid}` : 'users/unknown');
+      }
       throw err;
     }
   }
